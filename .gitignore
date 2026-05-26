@@ -1,0 +1,38 @@
+# ESP-IDF / CMake build files
+build/
+**/build/
+sdkconfig
+*.old
+*.temp
+dependencies.lock
+managed_components/
+.cache/
+**/.cache/
+
+# Python virtual environment and cache
+__pycache__/
+**/__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+ENV/
+
+# OS/IDE generated files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Large dataset acquisition files (Videos, Zips, extracted frames)
+Vision_Carro_Delivery_dataset_adquisition/*.mp4
+Vision_Carro_Delivery_dataset_adquisition/*.zip
+Vision_Carro_Delivery_dataset_adquisition/raw_images/
+Vision_Carro_Delivery_dataset_adquisition/raw_images_224/
+Vision_Carro_Delivery_dataset_adquisition/Img Dataset Teoria IA/
+
+# Roboflow Dataset image/label splits (keep config files only)
+Vision_Carro_Delivery_dataset_adquisition/Delivery_Vision.v4i.yolov8/train/
+Vision_Carro_Delivery_dataset_adquisition/Delivery_Vision.v4i.yolov8/valid/
+Vision_Carro_Delivery_dataset_adquisition/Delivery_Vision.v4i.yolov8/test/

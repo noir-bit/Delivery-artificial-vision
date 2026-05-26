@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 2
+names: ['obstacle', 'person']
+
+roboflow:
+  workspace: nicolass-workspace-qeu9g
+  project: delivery_vision
+  version: 4
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/nicolass-workspace-qeu9g/delivery_vision/dataset/4
