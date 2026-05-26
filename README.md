@@ -4,7 +4,7 @@ Este proyecto implementa una red neuronal convolucional para la detección de ob
 
 ---
 
-## 📋 Tabla de Contenidos
+## Tabla de Contenidos
 1. [Estado del Proyecto y Limitación de Hardware](#-estado-del-proyecto-y-limitación-de-hardware-importante)
 2. [Estructura del Repositorio](#-estructura-del-repositorio)
 3. [Requisitos de Hardware](#-requisitos-de-hardware)
@@ -16,7 +16,7 @@ Este proyecto implementa una red neuronal convolucional para la detección de ob
 
 ---
 
-## ⚠️ Estado del Proyecto y Limitación de Hardware (¡Importante!)
+## Estado del Proyecto y Limitación de Hardware (¡Importante!)
 
 ### Contexto del Pipeline de Captura:
 El objetivo inicial del proyecto era realizar detección de objetos en tiempo real mediante un flujo de video en vivo capturado directamente con una cámara conectada a los puertos MIPI CSI de la placa de desarrollo.
@@ -32,7 +32,7 @@ Debido a restricciones de tiempo, el pipeline se modificó para funcionar de la 
 
 ---
 
-## 📂 Estructura del Repositorio
+## Estructura del Repositorio
 
 Para mantener el proyecto limpio y funcional sin alterar las dependencias relativas de ESP-DL, el repositorio está organizado de la siguiente manera:
 
@@ -58,7 +58,7 @@ Proyecto_Final_IA/
 
 ---
 
-## 🔌 Requisitos de Hardware
+## Requisitos de Hardware
 
 1. **Microcontrolador**: Tarjeta de desarrollo **Guition JC-ESP32P4-M13 DEV** (módulo `JC-ESP32P4-M3` con chip ESP32-P4, 32MB PSRAM y 16MB Flash).
 2. **Cámara**: Cámara compatible con Raspberry Pi 5MP V1.3 (Sensor OV5647, cable plano de 15 pines). *Nota: Físicamente conectable al puerto CSI, pero emulada vía flash debido a la limitación de software descrita.*
@@ -66,7 +66,7 @@ Proyecto_Final_IA/
 
 ---
 
-## 💻 Requisitos de Software
+## Requisitos de Software
 
 * **Espressif ESP-IDF v5.3**: Entorno oficial de desarrollo necesario para compilar y flashear el microcontrolador.
 * **Python 3.8+**: Requerido en la PC cliente para ejecutar el visualizador.
@@ -77,7 +77,7 @@ Proyecto_Final_IA/
 
 ---
 
-## 🚀 Guía de Compilación y Flasheo
+## Guía de Compilación y Flasheo
 
 Siga estos pasos para compilar e instalar el firmware en la tarjeta ESP32-P4:
 
@@ -98,7 +98,7 @@ Siga estos pasos para compilar e instalar el firmware en la tarjeta ESP32-P4:
 
 ---
 
-## 🖥️ Visualización en la PC
+## Visualización en la PC
 
 Una vez que la tarjeta esté flasheada y ejecutando el bucle de procesamiento:
 
@@ -116,7 +116,7 @@ Una vez que la tarjeta esté flasheada y ejecutando el bucle de procesamiento:
 
 ---
 
-## 📊 Adquisición del Dataset y Preprocesamiento
+## Adquisición del Dataset y Preprocesamiento
 
 Los datos del proyecto se capturaron y formatearon mediante el siguiente flujo de trabajo:
 
