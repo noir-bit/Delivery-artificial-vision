@@ -12,7 +12,7 @@ Este proyecto implementa una red neuronal convolucional para la detección de ob
 5. [Guía de Compilación y Flasheo](#-guía-de-compilación-y-flasheo)
 6. [Visualización en la PC](#-visualización-en-la-pc)
 7. [Adquisición del Dataset y Preprocesamiento](#-adquisición-del-dataset-y-preprocesamiento)
-8. [Créditos y Licencia](#-créditos-y-licencia)
+
 
 ---
 
