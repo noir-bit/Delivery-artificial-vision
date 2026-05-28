@@ -1,129 +1,91 @@
-# ESP32-P4 AI Obstacle & Person Detection Pipeline
+# ESP32-P4 AI Obstacle & Person Detection Pipeline (Rama: live_video_feed)
 
-Este proyecto implementa una red neuronal convolucional para la detección de obstáculos y personas en hardware embebido utilizando el microcontrolador **ESP32-P4** y la biblioteca **ESP-DL** de Espressif. El sistema procesa inferencias a nivel local y transmite los resultados por comunicación serial a una aplicación cliente en Python para su visualización en PC.
-
----
-
-## 📋 Tabla de Contenidos
-1. [Estado del Proyecto y Limitación de Hardware](#-estado-del-proyecto-y-limitación-de-hardware-importante)
-2. [Estructura del Repositorio](#-estructura-del-repositorio)
-3. [Requisitos de Hardware](#-requisitos-de-hardware)
-4. [Requisitos de Software](#-requisitos-de-software)
-5. [Guía de Compilación y Flasheo](#-guía-de-compilación-y-flasheo)
-6. [Visualización en la PC](#-visualización-en-la-pc)
-7. [Adquisición del Dataset y Preprocesamiento](#-adquisición-del-dataset-y-preprocesamiento)
-8. [Créditos y Licencia](#-créditos-y-licencia)
+Esta rama contiene la implementación funcional para el procesamiento de **video en vivo en tiempo real** utilizando el microcontrolador **ESP32-P4**, una cámara compatible con **Raspberry Pi v1.3 (OV5647)** y la biblioteca de Deep Learning **ESP-DL** de Espressif.
 
 ---
 
-## ⚠️ Estado del Proyecto y Limitación de Hardware (¡Importante!)
-
-### Contexto del Pipeline de Captura:
-El objetivo inicial del proyecto era realizar detección de objetos en tiempo real mediante un flujo de video en vivo capturado directamente con una cámara conectada a los puertos MIPI CSI de la placa de desarrollo.
-
-### Limitación Técnica Encontrada:
-La biblioteca de cámara oficial de Espressif (`esp32-camera`) y el SDK actual presentan limitaciones de compatibilidad fuera de la caja para la interfaz **MIPI CSI / CCI** del chip **ESP32-P4** en combinación con la cámara **OV5647 (Raspberry Pi v1.3)** en esta tarjeta específica. Lograr la comunicación nativa de video en tiempo real requiere escribir un controlador de bajo nivel y de sincronización desde cero.
-
-### Solución Implementada (Plan de Contingencia):
-Debido a restricciones de tiempo, el pipeline se modificó para funcionar de la siguiente manera:
-1. Las imágenes de prueba de alta resolución se almacenan en una partición de memoria flash llamada **SPIFFS** en el microcontrolador.
-2. El firmware embebido lee las imágenes estáticas de la memoria flash, realiza la decodificación JPEG a RGB888, ejecuta la inferencia neural y transmite las coordenadas calculadas en formato JSON por puerto USB Serial.
-3. El visualizador de Python en la PC lee estas coordenadas en tiempo real, las mapea con los archivos originales en el disco local de la PC y dibuja los bounding boxes correspondientes.
-
----
-
-## 📂 Estructura del Repositorio
-
-Para mantener el proyecto limpio y funcional sin alterar las dependencias relativas de ESP-DL, el repositorio está organizado de la siguiente manera:
+## 📋 Estructura General del Repositorio en esta Rama
 
 ```text
-Proyecto_Final_IA/
+Proyecto_Final_IA/ (Rama: live_video_feed)
 ├── README.md                                 # Esta documentación
-├── .gitignore                                # Exclusiones para Git (evita subir videos y datasets pesados)
-├── Proyecto_Final_IA/
-│   └── esp-dl/                               # Biblioteca Deep Learning de Espressif
+├── .gitignore                                # Filtros Git para evitar subir archivos pesados o temporales
+├── live_video_feed/                          # [CÓDIGO DE VIDEO EN VIVO]
+│   ├── CMakeLists.txt                        # Configuración CMake con rutas de componentes relativas
+│   ├── partitions.csv                        # Tabla de particiones de memoria flash
+│   ├── sdkconfig.defaults                    # Parámetros por defecto para compilar en ESP32-P4
+│   ├── README_live.md                        # Documentación original del live feed
+│   ├── main/
+│   │   ├── idf_component.yml                 # Declaración de componentes de sensores de cámara
+│   │   ├── main.cpp                          # Captura de frames, debayerización, inferencia y envío serial
+│   │   ├── mipi_camera.c                     # Driver de bajo nivel para MIPI CSI en ESP32-P4
+│   │   └── mipi_camera.h                     # Cabecera del driver de cámara
+│   └── pc_visualizer/
+│       └── live_feed.py                      # Script de Python para decodificación Base64 y visualización con OpenCV
+├── Proyecto_Final_IA/                        # [CÓDIGO DE SIMULACIÓN DE IMÁGENES FIJAS]
+│   └── esp-dl/                               # Repositorio base de ESP-DL
 │       ├── examples/
-│       │   └── obstacle_person_detect/       # [CÓDIGO PROPIO] Aplicación de firmware y visualizador PC
-│       │       ├── main/                     # Código fuente C++ (app_main.cpp) e imágenes SPIFFS
-│       │       ├── partitions.csv            # Tabla de particiones de memoria flash
-│       │       └── pc_viewer.py              # Visualizador en Python con OpenCV
+│       │   └── obstacle_person_detect/       # Inferencia local sobre imágenes fijas cargadas vía SPIFFS
 │       └── models/
-│           └── obstacle_person_detect/       # [MODELO PROPIO] Binario del modelo .espdl y wrapper C++
-└── Vision_Carro_Delivery_dataset_adquisition/# Pipeline de adquisición de datos
-    ├── vid2frames.m                          # Script de MATLAB para extracción y redimensionamiento
-    ├── Delivery_Vision.v4i.yolov8/           # Metadatos del dataset Roboflow (YOLOv8)
-    │   └── data.yaml                         # Configuración del dataset (Clases: obstacle, person)
-    └── (Excluidos de Git) /raw_images/       # Fotogramas originales extraídos de los videos MP4
+│           └── obstacle_person_detect/       # Modelo quantizado .espdl (Pico 224x224, Obstáculos y Personas)
+└── Vision_Carro_Delivery_dataset_adquisition/# Metadatos y MATLAB script para preparación del dataset
 ```
 
 ---
 
-## 🔌 Requisitos de Hardware
+## 🚀 Flujo de Trabajo del Live Video Feed
 
-1. **Microcontrolador**: Tarjeta de desarrollo **Guition JC-ESP32P4-M13 DEV** (módulo `JC-ESP32P4-M3` con chip ESP32-P4, 32MB PSRAM y 16MB Flash).
-2. **Cámara**: Cámara compatible con Raspberry Pi 5MP V1.3 (Sensor OV5647, cable plano de 15 pines). *Nota: Físicamente conectable al puerto CSI, pero emulada vía flash debido a la limitación de software descrita.*
-3. **Accesorios**: Cable de conexión USB-C a PC para flasheo y comunicación serial.
+A diferencia de la rama `main` (que emula la cámara procesando fotos estáticas cargadas en SPIFFS), esta rama realiza la captura en tiempo real:
 
----
-
-## 💻 Requisitos de Software
-
-* **Espressif ESP-IDF v5.3**: Entorno oficial de desarrollo necesario para compilar y flashear el microcontrolador.
-* **Python 3.8+**: Requerido en la PC cliente para ejecutar el visualizador.
-* **Dependencias de Python**:
-  ```cmd
-  pip install opencv-python pyserial
-  ```
-
----
-
-## 🚀 Guía de Compilación y Flasheo
-
-Siga estos pasos para compilar e instalar el firmware en la tarjeta ESP32-P4:
-
-1. Abra su consola con el entorno **ESP-IDF v5.3** activado.
-2. Navegue al directorio de la aplicación ejemplo:
-   ```bash
-   cd Proyecto_Final_IA/esp-dl/examples/obstacle_person_detect
+1. **Captura MIPI CSI**: El driver de bajo nivel (`mipi_camera.c`) inicializa la cámara OV5647 de 5MP mediante el bus MIPI CSI y CCI (I2C) a 800x800 píxeles.
+2. **Debayerización (RAW8 a RGB888)**: Se ejecuta una rutina de debayerización por software rápida en la PSRAM para transformar los datos de color de Bayer (BGGR) a canales completos RGB888.
+3. **Inferencia Local con IA**: El procesador de doble núcleo del ESP32-P4 ejecuta la inferencia mediante el modelo quantizado de ESP-DL (`ESPDetDetect`) para detectar obstáculos y personas en una ventana de 224x224.
+4. **Compresión de Imagen**: El frame RGB se comprime a JPEG directamente en hardware utilizando el codificador JPEG integrado de alto rendimiento del ESP32-P4.
+5. **Transmisión Base64**: La imagen JPEG comprimida se codifica en Base64 y se envía por consola serial en formato JSON junto con las coordenadas de detección, a una tasa de refresco limitada a **7 FPS** (para evitar saturación del buffer serie):
+   ```json
+   >>>JSON_START<<<
+   {
+     "image": "/9j/4AAQSkZJRgABAQEASABIAAD/2wBD...",
+     "detections": [
+       {"category": 0, "score": 0.88, "box": [120, 45, 180, 200]}
+     ]
+   }
+   >>>JSON_END<<<
    ```
-3. Defina el chip objetivo a compilar:
+6. **Decodificación y Visualización en PC**: El script `live_feed.py` en la PC lee el flujo serial, decodifica el string Base64 a una matriz de imagen OpenCV, dibuja las cajas delimitadoras de las detecciones (`Obstacle` en Rojo, `Person` en Verde) y las proyecta en una ventana de video en vivo.
+
+---
+
+## 🔧 Instrucciones de Compilación y Ejecución
+
+### 1. Compilación del Firmware
+1. Abra su consola con el entorno **ESP-IDF v5.3** activado.
+2. Navegue al directorio del live feed:
+   ```bash
+   cd live_video_feed
+   ```
+3. Defina la tarjeta objetivo:
    ```bash
    idf.py set-target esp32p4
    ```
-4. Compile el proyecto y súbalo a la placa conectada:
+4. Compile e instale en la placa conectada:
    ```bash
    idf.py build flash
    ```
-   *(Este comando compilará el código C++, empaquetará las imágenes de la carpeta `main/images` en una partición SPIFFS de 1MB y la flasheará automáticamente).*
+   *(La configuración de `CMakeLists.txt` incluye de forma relativa las dependencias del modelo de IA que se encuentran en el directorio `Proyecto_Final_IA/esp-dl` para que la compilación sea completamente portable).*
 
----
-
-## 🖥️ Visualización en la PC
-
-Una vez que la tarjeta esté flasheada y ejecutando el bucle de procesamiento:
-
-1. **Cierre cualquier monitor serial** (incluyendo el monitor de VSCode o `idf.py monitor`) para liberar el puerto COM de la tarjeta.
-2. Abra una terminal estándar e ingrese al directorio del ejemplo:
+### 2. Ejecución del Visualizador en PC
+1. Instale las dependencias de Python si aún no lo ha hecho:
    ```bash
-   cd Proyecto_Final_IA/esp-dl/examples/obstacle_person_detect
+   pip install opencv-python pyserial numpy
    ```
-3. Ejecute el script del visualizador:
+2. Abra el script `live_video_feed/pc_visualizer/live_feed.py` y modifique la línea 9 con el puerto COM de su placa:
+   ```python
+   SERIAL_PORT = 'COM4'  # Reemplace por su puerto COM correspondiente (ej. COM3, COM5)
+   ```
+3. Asegúrese de **cerrar cualquier monitor serial** (para liberar el puerto de comunicación).
+4. Ejecute el script:
    ```bash
-   python pc_viewer.py
+   python live_video_feed/pc_visualizer/live_feed.py
    ```
-4. Ingrese el puerto COM detectado correspondiente a su tarjeta (ej. `COM3`).
-5. Se abrirá una ventana de OpenCV mostrando las imágenes. **Presione cualquier tecla** en la ventana de la imagen para avanzar al siguiente fotograma detectado. Presione `q` para salir del visualizador.
-
----
-
-## 📊 Adquisición del Dataset y Preprocesamiento
-
-Los datos del proyecto se capturaron y formatearon mediante el siguiente flujo de trabajo:
-
-1. **Adquisición**: Grabación de videos del entorno del carro repartidor en formato MP4 (`Delivery1.mp4` a `Delivery6.mp4`).
-2. **Extracción y Redimensionamiento**: El script de MATLAB `vid2frames.m` extrae automáticamente los fotogramas del video y los redimensiona a **224x224 píxeles** (el tamaño esperado por la capa de entrada de la red neuronal).
-3. **Etiquetado y Dataset**: Se cargaron los fotogramas redimensionados en **Roboflow** y se etiquetaron bajo dos categorías:
-   * `0: obstacle` (Obstáculo en el camino)
-   * `1: person` (Personas)
-   * Enlace al Dataset en Roboflow Universe: [Dataset Delivery Vision](https://universe.roboflow.com/nicolass-workspace-qeu9g/delivery_vision/dataset/4)
-4. **Quantización**: El modelo entrenado en formato YOLOv8 se convirtió y quantizó en un binario compatible con la arquitectura de aceleración de hardware del ESP32-P4 (`best.espdl` de 577 KB).
+5. Presione la tecla `q` en la ventana de OpenCV para salir del reproductor.
